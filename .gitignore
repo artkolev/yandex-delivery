@@ -1,0 +1,23 @@
+# Default ignored files
+/shelf/
+/workspace.xml
+# Editor-based HTTP Client requests
+/httpRequests/
+# Datasource local storage ignored files
+/dataSources/
+/dataSources.local.xml
+# phpstorm project files
+.idea
+
+# composer vendor dir
+/vendor
+
+# composer itself is not needed
+composer.phar
+
+# enviroment
+.env
+
+# cs fixer
+*.cache
+csfix

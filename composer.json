@@ -1,0 +1,50 @@
+{
+  "name": "artkolev/yandex-delivery",
+  "description": "Ya delivery integration",
+  "type": "yii2-extension",
+  "license": "GPL-3.0-only",
+  "authors": [
+    {
+      "name": "Artem Kolevatov",
+      "email": "artkolev@gmail.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "palax\\yandex_delivery\\": "src/"
+    }
+  },
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "https://asset-packagist.org"
+    },
+    {
+      "type": "git",
+      "url": "https://git.palax.dev/palax-packages/core.git"
+    },
+    {
+      "type": "git",
+      "url": "https://git.palax.dev/palax-packages/yii2-core.git"
+    },
+    {
+      "type": "git",
+      "url": "https://git.palax.dev/palax-packages/enum-core.git"
+    }
+  ],
+  "require-dev": {
+    "codeception/codeception": "*",
+    "codeception/module-asserts": "*",
+    "codeception/module-phpbrowser": "*",
+    "phpstan/phpstan": "^1.10",
+    "friendsofphp/php-cs-fixer": "^3.26"
+  },
+  "require": {
+    "php": "^8.1"
+  },
+  "minimum-stability": "stable",
+  "config": {
+    "allow-plugins": {
+    }
+  }
+}
