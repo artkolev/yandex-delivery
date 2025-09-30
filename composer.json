@@ -1,0 +1,49 @@
+{
+  "name": "artkolev/yandex-delivery",
+  "description": "Ya delivery integration",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Artem Kolevatov",
+      "email": "artkolev@gmail.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "artkolev\\yandex_delivery\\": "src/"
+    }
+  },
+  "require": {
+    "php": "^8.1",
+    "ext-curl": "*",
+    "palax/1c-catalog": "^0"
+  },
+  "require-dev": {
+    "codeception/codeception": "*",
+    "codeception/module-asserts": "*",
+    "codeception/module-phpbrowser": "*",
+    "phpstan/phpstan": "^1.10",
+    "friendsofphp/php-cs-fixer": "^3.26"
+  },
+  "minimum-stability": "stable",
+  "config": {
+    "allow-plugins": {
+      "yiisoft/yii2-composer": true
+    }
+  },
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "https://asset-packagist.org"
+    },
+    {
+      "type": "git",
+      "url": "https://git.palax.dev/palax-packages/enum-core.git"
+    },
+    {
+      "type": "git",
+      "url": "https://git.palax.dev/palax-packages/1c-catalog.git"
+    }
+  ]
+}
