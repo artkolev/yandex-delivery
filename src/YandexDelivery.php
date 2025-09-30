@@ -79,7 +79,7 @@ class YandexDelivery
             $this->responseUrl . $this->calculatePriceUrl
         );
         if (isset($result['error_details'])) {
-            return 0;
+            return '0';
         }
 
         return $result['pricing_total'];
@@ -162,10 +162,10 @@ class YandexDelivery
         return [];
     }
 
-    private function sendGetResponse(string $url)
+    private function sendGetResponse(string $url): array
     {
         if (empty($url)) {
-            return false;
+            return [];
         }
 
         $request = curl_init($url);
@@ -182,11 +182,11 @@ class YandexDelivery
         return $result ? json_decode($result, true) : [];
     }
 
-    private function sendPostResponse(string $body, string $url)
+    private function sendPostResponse(string $body, string $url): array
     {
 
         if (empty($body) || empty($url)) {
-            return false;
+            return [];
         }
 
         $request = curl_init();
