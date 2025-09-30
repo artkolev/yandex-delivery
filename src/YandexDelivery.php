@@ -2,28 +2,28 @@
 
 namespace artkolev\yandex_delivery;
 
+use palax\onec_catalog\core\order\model\Order;
+use palax\onec_catalog\core\order\model\OrderItem;
+use palax\onec_catalog\core\user\interface\UserModelInterface;
+
 /**
  * Класс для работы c доставкой через Яндекс Такси
  */
 class YandexDelivery
 {
 	public bool $debugMode = true;
-    public int $yandexDeliveryOn = 0;
     public string $langCode = 'ru_RU';
-    public string $responseUrl = '';
-    public string $taxiToken = '';
-    public string $geoToken = '';
-    public array $recipientCoordinates = [];
-
+    public string $responseUrl = 'https://b2b.taxi.tst.yandex.net/api/';
+    public string $taxiToken = 'test';
+    public string $geoToken = 'test';
     public array $LOG = [];
     public array $ERRORS = [];
-    public array $MESSAGES = [];
 
-    private string $checkPriceUrl = 'b2b/cargo/integration/v1/check-price';
+    private string $calculatePriceUrl = 'b2b/platform/pricing-calculator';
+    private string $offersCreate = 'b2b/platform/offers/create';
     private string $geocoderUrl = 'https://geocode-maps.yandex.ru/1.x/';
 
     public function __construct() {
-        $this->yandexDeliveryOn = getenv('YANDEX_DELIVERY_ON');
         $this->responseUrl = getenv('YANDEX_DELIVERY_URL');
         $this->taxiToken = getenv('YANDEX_DELIVERY_TOKEN');
         $this->geoToken = getenv('YANDEX_GEOCODER_TOKEN');
@@ -58,80 +58,100 @@ class YandexDelivery
         return [];
     }
 
-    public function checkDeliveryPrice(int $quantity, array $senderCoordinates, array $recipientCoordinates)
-    {
-        if (empty($quantity) || empty($senderCoordinates) || empty($recipientCoordinates)) {
-            return false;
+    public function calculateDeliveryPrice(
+        int $total_weight,
+        string $sourceStationId,
+        string $destinationAddress,
+        string $tariff
+    ): string {
+
+        $result = $this->sendPostResponse(
+            json_encode([
+                "source" => [
+                    "platform_station_id" => $sourceStationId,
+                ],
+                "destination" => [
+                    "address" => $destinationAddress
+                ],
+                "tariff" => $tariff,
+                'total_weight' => $total_weight,
+            ]),
+            $this->responseUrl . $this->calculatePriceUrl
+        );
+        if (isset($result['error_details'])) {
+            return 0;
         }
 
-        $body = $this->getCheckPriceBodyFields($quantity, $senderCoordinates, $recipientCoordinates);
-
-        if (empty($body)) {
-            return false;
-        }
-
-        return $this->sendPostResponse($body, $this->responseUrl.$this->checkPriceUrl);
+        return $result['pricing_total'];
     }
 
-    private function getPostHeader(): array|bool
+    public function createOffer(YandexOfferDTO $yandexOfferDTO): array
     {
-        if (empty($this->langCode)) {
-            return false;
+        $items = [];
+
+        /** @var OrderItem $item */
+        foreach ($yandexOfferDTO->order->getItems()->all() as $item) {
+            $items[] = [
+                'count' => $item->getQuantity(),
+                'name' => $item->getName(),
+                'article' => $item->getId(),
+                'billing_details' =>  [
+                    'unit_price' =>  $item->getTotal(),
+                    'assessed_unit_price' =>  $item->getTotal()
+                ],
+                'place_barcode' => $yandexOfferDTO->order->getId()
+            ];
         }
 
-        if (empty($this->taxiToken)) {
-            return false;
-        }
-
-        return [
-            'Accept-Language: '.$this->langCode,
-            'Authorization: Bearer '.$this->taxiToken,
-            'Content-Type: application/json',
-        ];
-    }
-
-    private function getCheckPriceBodyFields(int $quantity, array $senderCoordinates, array $recipientCoordinates): bool|string
-    {
-        if (empty($quantity) || empty($senderCoordinates) || empty($recipientCoordinates)) {
-            return false;
-        }
-
-
-        return json_encode([
-            'items' => [
+        $data = [
+            'info' =>  [
+                'operator_request_id' => $yandexOfferDTO->order->id
+            ],
+            'source' =>  [
+                'platform_station' =>  [
+                    'platform_id' =>  $yandexOfferDTO->source_platform_id
+                ],
+            ],
+            'destination' =>  [
+                'type' =>  'custom_location',
+                'custom_location' =>  [
+                    'details' =>  [
+                        'full_address' => $yandexOfferDTO->address,
+                        'room' => $yandexOfferDTO->room
+                    ]
+                ],
+            ],
+            'items' => $items,
+            'places' =>  [
                 [
-                    'quantity' => $quantity
+                    'physical_dims' =>  [
+                        'weight_gross' =>  $yandexOfferDTO->order->getItemsCount()
+                    ],
+                    'barcode' =>  $yandexOfferDTO->order->getId(),
                 ]
             ],
-            'requirements' => [
-                'pro_courier' => false,
-                'taxi_class' => 'express'
+            'billing_info' =>  [
+                'payment_method' =>  'already_paid'
             ],
-            'route_points' => [
-                [
-                    'coordinates' => $senderCoordinates
-                ],
-                [
-                    'coordinates' => $recipientCoordinates
-                ],
+            'recipient_info' =>  [
+                'first_name' =>  $yandexOfferDTO->user->getName(),
+                'last_name' =>  $yandexOfferDTO->user->getSurname(),
+                'partonymic' =>  $yandexOfferDTO->user->getPatronymic(),
+                'phone' =>  $yandexOfferDTO->user->getPhone(),
+                'email' =>  $yandexOfferDTO->user->getEmail()
             ],
-            'skip_door_to_door' => false
-        ]);
+            'last_mile_policy' =>  'time_interval',
+            'particular_items_refuse' =>  false
+        ];
+
+        return json_decode($this->sendPostResponse(json_encode($data), $this->responseUrl . $this->offersCreate), true);
     }
-
-
 
     /**
      * Пример $address = 'Москва, Тверская, д.7';
      */
     public function getCoordinatesByAddress(string $address)
     {
-        global $_delivery;
-
-        if (empty($_delivery->yandexDeliveryOn)) {
-            return [];
-        }
-
         $responseUrl = sprintf("%s?apikey=%s&format=json&geocode=%s", $this->geocoderUrl, $this->geoToken, urlencode($address));
         $result = $this->sendGetResponse($responseUrl);
 
@@ -178,8 +198,8 @@ class YandexDelivery
             CURLOPT_SSL_VERIFYPEER => FALSE,
             CURLOPT_POSTFIELDS     => $body,
             CURLOPT_HTTPHEADER     => [
-                'Accept-Language: '.$this->langCode,
-                'Authorization: Bearer '.$this->taxiToken,
+                'Accept-Language: ' . $this->langCode,
+                'Authorization: Bearer ' . $this->taxiToken,
                 'Content-Type: application/json',
             ],
         ]);

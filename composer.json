@@ -1,8 +1,8 @@
 {
   "name": "artkolev/yandex-delivery",
   "description": "Ya delivery integration",
-  "type": "yii2-extension",
-  "license": "GPL-3.0-only",
+  "type": "library",
+  "license": "MIT",
   "authors": [
     {
       "name": "Artem Kolevatov",
@@ -11,7 +11,25 @@
   ],
   "autoload": {
     "psr-4": {
-      "palax\\yandex_delivery\\": "src/"
+      "artkolev\\yandex_delivery\\": "src/"
+    }
+  },
+  "require": {
+    "php": "^8.1",
+    "ext-curl": "*",
+    "palax/1c-catalog": "^0"
+  },
+  "require-dev": {
+    "codeception/codeception": "*",
+    "codeception/module-asserts": "*",
+    "codeception/module-phpbrowser": "*",
+    "phpstan/phpstan": "^1.10",
+    "friendsofphp/php-cs-fixer": "^3.26"
+  },
+  "minimum-stability": "stable",
+  "config": {
+    "allow-plugins": {
+      "yiisoft/yii2-composer": true
     }
   },
   "repositories": [
@@ -21,30 +39,11 @@
     },
     {
       "type": "git",
-      "url": "https://git.palax.dev/palax-packages/core.git"
-    },
-    {
-      "type": "git",
-      "url": "https://git.palax.dev/palax-packages/yii2-core.git"
-    },
-    {
-      "type": "git",
       "url": "https://git.palax.dev/palax-packages/enum-core.git"
+    },
+    {
+      "type": "git",
+      "url": "https://git.palax.dev/palax-packages/1c-catalog.git"
     }
-  ],
-  "require-dev": {
-    "codeception/codeception": "*",
-    "codeception/module-asserts": "*",
-    "codeception/module-phpbrowser": "*",
-    "phpstan/phpstan": "^1.10",
-    "friendsofphp/php-cs-fixer": "^3.26"
-  },
-  "require": {
-    "php": "^8.1"
-  },
-  "minimum-stability": "stable",
-  "config": {
-    "allow-plugins": {
-    }
-  }
+  ]
 }
